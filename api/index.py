@@ -160,7 +160,7 @@ def predict_air_quality(form):
 
 
 def select_options(values, selected):
-    return "\\n".join(
+    return "\n".join(
         f'<option value="{html.escape(str(value))}" '
         f'{"selected" if str(value) == str(selected) else ""}>'
         f"{html.escape(str(value))}</option>"
@@ -199,7 +199,7 @@ def render_page(result=None, error=None, values=None):
             "Hazardous": ("#7e4041", "#f5e7e7", "301-500"),
         }
         color, tint, band = tones[category]
-        bars = "\\n".join(
+        bars = "\n".join(
             f'<div class="prob-row"><span>{html.escape(label)}</span><div class="bar"><i style="width:{prob * 100:.1f}%;background:{color}"></i></div><strong>{prob * 100:.0f}%</strong></div>'
             for label, prob in ranked
         )
