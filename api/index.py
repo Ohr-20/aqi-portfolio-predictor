@@ -24,7 +24,6 @@ CATEGORICAL_FEATURES = MODEL_DATA["categorical_features"]
 NUMERIC_FEATURES = MODEL_DATA["numeric_features"]
 CLASSIFIER_CATEGORIES = MODEL_DATA["classifier_categories"]
 REGRESSOR_CATEGORIES = MODEL_DATA["regressor_categories"]
-CITY_PROFILES = MODEL_DATA["city_profiles"]
 
 
 def softmax(values):
@@ -119,22 +118,18 @@ def aqi_category(aqi):
 
 
 def make_input_row(form):
-    city_key = form.get("city_key", ["New York, NY"])[0]
-    if city_key not in CITY_PROFILES:
-        raise ValueError("Choose a city from the list.")
-    profile = CITY_PROFILES[city_key]
     month = int(form.get("month", ["1"])[0])
     day_of_month = int(form.get("day", ["15"])[0])
     day_of_year = max(1, min(365, (month - 1) * 30 + day_of_month))
     day_of_week = int(form.get("day_of_week", ["2"])[0])
 
-    population = float(profile["population"])
-    density = float(profile["density"])
+    population = float(form.get("population", ["1000000"])[0])
+    density = float(form.get("density", ["2500"])[0])
 
     return {
-        "Number of Sites Reporting": float(form.get("sites", [profile["sites"]])[0]),
-        "lat": float(profile["lat"]),
-        "lng": float(profile["lng"]),
+        "Number of Sites Reporting": float(form.get("sites", ["3"])[0]),
+        "lat": float(form.get("lat", ["34.0522"])[0]),
+        "lng": float(form.get("lng", ["-118.2437"])[0]),
         "population": population,
         "density": density,
         "log_population": math.log1p(population),
@@ -143,9 +138,8 @@ def make_input_row(form):
         "day_of_week": day_of_week,
         "day_of_year": day_of_year,
         "is_weekend": 1 if day_of_week in (5, 6) else 0,
-        "city_key": city_key,
         "Defining Parameter": form.get("defining_parameter", ["PM2.5"])[0],
-        "state_id": profile["state_id"],
+        "state_id": form.get("state_id", ["CA"])[0],
         "season": season_from_month(month),
     }
 
@@ -177,14 +171,13 @@ def select_options(values, selected):
 def render_page(result=None, error=None, values=None):
     values = values or {}
     pollutant_values = CLASSIFIER_CATEGORIES[CATEGORICAL_FEATURES.index("Defining Parameter")]
-    city_values = sorted(CITY_PROFILES)
-    default_city = values.get("city_key", "New York, NY")
+    state_values = CLASSIFIER_CATEGORIES[CATEGORICAL_FEATURES.index("state_id")]
 
     def field(name, default):
         return html.escape(str(values.get(name, default)))
 
-    city_options = "\\n".join(f'<option value="{html.escape(city)}"></option>' for city in city_values)
     pollutant_options = select_options(pollutant_values, values.get("defining_parameter", "PM2.5"))
+    state_options = select_options(state_values, values.get("state_id", "CA"))
     error_html = f'<div class="error" role="alert">{html.escape(error)}</div>' if error else ""
 
     result_html = """
@@ -294,14 +287,14 @@ def render_page(result=None, error=None, values=None):
     .insight b {{ display:block; margin-bottom:4px; font-size:14px; }} .insight span {{ color:var(--muted); font-size:12px; line-height:1.45; }}
     footer {{ background:#0b232b; color:#b8c8c8; }} .footer-inner {{ display:flex; justify-content:space-between; gap:16px; padding:18px 0; font-size:12px; }}
     @media (max-width:820px) {{ .workspace {{ grid-template-columns:1fr; margin-top:-18px; }} .hero {{ min-height:330px; }} .hero-copy {{ padding:42px 0 48px; }} }}
-    @media (max-width:560px) {{ .hero-inner,.workspace,.footer-inner,.insight-inner {{ width:min(100% - 28px,1180px); }} .nav-note {{ display:none; }} .fields {{ grid-template-columns:1fr; }} .tool,.result {{ padding:21px; }} .aqi-summary {{ align-items:flex-start; }} .aqi-ring {{ width:95px; height:95px; }} .aqi-ring>div {{ width:75px; height:75px; }} .aqi-ring strong {{ font-size:26px; }} .prob-row {{ grid-template-columns:minmax(110px,1fr) minmax(55px,1fr) 31px; }} .insight-inner {{ grid-template-columns:1fr; gap:14px; }} .footer-inner {{ flex-direction:column; }} }}
+    @media (max-width:560px) {{ .hero-inner,.workspace,.footer-inner,.insight-inner {{ width:min(100% - 28px,1180px); }} .nav-note {{ display:none; }} .hero-copy {{ padding-top:36px; }} .fields {{ grid-template-columns:1fr; gap:17px; }} .tool,.result {{ padding:21px; }} input,select {{ min-height:48px; font-size:16px; }} input[type=range] {{ min-height:34px; }} .range-line {{ gap:8px; }} .button-row {{ align-items:stretch; flex-direction:column; }} button {{ width:100%; min-height:50px; }} .aqi-summary {{ align-items:flex-start; }} .aqi-ring {{ width:95px; height:95px; }} .aqi-ring>div {{ width:75px; height:75px; }} .aqi-ring strong {{ font-size:26px; }} .prob-row {{ grid-template-columns:minmax(110px,1fr) minmax(55px,1fr) 31px; }} .insight-inner {{ grid-template-columns:1fr; gap:14px; }} .footer-inner {{ flex-direction:column; }} }}
   </style>
 </head>
 <body>
   <section class="hero">
     <div class="hero-inner">
       <nav class="nav"><div class="brand"><span class="brand-mark"></span>Atmosphere</div><span class="nav-note">US air-quality forecasting studio</span></nav>
-      <div class="hero-copy"><p class="eyebrow">AQI scenario explorer</p><h1>See the air before you step outside.</h1><p>Explore a historical AQI forecast using city, season, pollutant, and monitoring context.</p><div class="hero-stats"><span>614 US cities</span><span>1980-2022 observations</span><span>XGBoost models</span></div></div>
+      <div class="hero-copy"><p class="eyebrow">AQI scenario explorer</p><h1>See the air before you step outside.</h1><p>Explore a historical AQI forecast using location, season, pollutant, and monitoring context.</p><div class="hero-stats"><span>US historical data</span><span>1980-2022 observations</span><span>XGBoost models</span></div></div>
     </div>
   </section>
   <main class="workspace">
@@ -309,8 +302,12 @@ def render_page(result=None, error=None, values=None):
       <div class="panel-head"><div><h2>Build a scenario</h2><p>Set the place and conditions you want to explore.</p></div><span class="step">01</span></div>
       {error_html}
       <div class="fields">
-        <div class="field wide"><label for="city">City</label><input id="city" name="city_key" list="city-list" value="{html.escape(str(default_city))}" autocomplete="off" required><datalist id="city-list">{city_options}</datalist><p class="field-hint">City profiles supply the geographic and demographic context.</p></div>
+        <div class="field"><label for="state">State</label><select id="state" name="state_id">{state_options}</select></div>
         <div class="field"><label for="pollutant">Defining parameter</label><select id="pollutant" name="defining_parameter">{pollutant_options}</select></div>
+        <div class="field"><label for="lat">Latitude</label><input id="lat" name="lat" type="number" min="-90" max="90" step="0.0001" value="{field('lat', 34.0522)}" required></div>
+        <div class="field"><label for="lng">Longitude</label><input id="lng" name="lng" type="number" min="-180" max="180" step="0.0001" value="{field('lng', -118.2437)}" required></div>
+        <div class="field"><label for="population">Population</label><input id="population" name="population" type="number" min="0" step="1" value="{field('population', 3898747)}" required></div>
+        <div class="field"><label for="density">Density</label><input id="density" name="density" type="number" min="0" step="0.1" value="{field('density', 3200)}" required></div>
         <div class="field"><label for="weekday">Day of week</label><select id="weekday">{select_options(['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'], '')}</select><input type="hidden" id="weekday-value" name="day_of_week" value="{field('day_of_week', 2)}"></div>
         <div class="field"><label for="month">Month</label><div class="range-line"><input id="month" name="month" type="range" min="1" max="12" value="{field('month', 8)}"><output id="month-label"></output></div></div>
         <div class="field"><label for="day">Day of month</label><div class="range-line"><input id="day" name="day" type="range" min="1" max="31" value="{field('day', 15)}"><output id="day-label"></output></div></div>

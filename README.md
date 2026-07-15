@@ -7,8 +7,10 @@ It uses:
 - XGBoost regression for the numeric AQI prediction
 - AQI category derived from the official AQI bands, ensuring it matches the predicted AQI
 - A separate XGBoost classifier for the probability breakdown
-- City profiles that fill geographic and demographic inputs from the selected city
+- Manual location inputs: state, latitude, longitude, population, density, and reporting sites
 - Pure-Python inference from exported model JSON files
+
+The city-free model was validated on a chronological 200,000-row holdout. It achieved 79.39% category accuracy, 0.270 macro F1, and a 13.51 AQI mean absolute error.
 
 ## Deploy
 
