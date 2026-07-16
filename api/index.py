@@ -184,7 +184,7 @@ def render_page(result=None, error=None, values=None):
       <section class="result result-empty">
         <span class="result-kicker">Forecast output</span>
         <h2>Ready when you are.</h2>
-        <p>Choose a city and tune the scenario to see the expected AQI and category signal.</p>
+        <p>Choose a location and tune the scenario to see the expected AQI and category signal.</p>
         <div class="empty-meter"><span></span><span></span><span></span><span></span><span></span><span></span></div>
       </section>
     """
